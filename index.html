@@ -5,185 +5,175 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mototaxis Montería</title>
     
-    <!-- Configuración PWA para Android e iOS -->
+    <!-- Configuración PWA -->
     <meta name="theme-color" content="#ffcc00">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
-    <!-- Manifest Inline mejorado -->
     <link rel="manifest" href='data:application/manifest+json,{"name":"Mototaxi Monteria","short_name":"MotoApp","start_url":".","display":"standalone","background_color":"#ffffff","theme_color":"#ffcc00","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/3194/3194591.png","sizes":"512x512","type":"image/png"}]}'>
 
-    <!-- Cargando Tailwind desde CDN con soporte de respaldo -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Leaflet para el Mapa -->
+    <!-- Estilos Blindados (Para que nunca se vea mal) -->
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; background-color: #f3f4f6; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        
+        .header { background: #ffcc00; padding: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 100; }
+        .header h1 { margin: 0; font-size: 18px; font-weight: 900; text-transform: uppercase; letter-spacing: -1px; }
+        
+        #map { flex: 1; width: 100%; z-index: 1; }
+        
+        .panel { 
+            background: white; padding: 20px; border-radius: 25px 25px 0 0; 
+            box-shadow: 0 -10px 25px rgba(0,0,0,0.1); z-index: 10;
+            position: relative; margin-top: -30px;
+        }
+        
+        .input-group { margin-bottom: 12px; position: relative; }
+        .input-group label { font-size: 10px; font-weight: bold; color: #999; text-transform: uppercase; margin-left: 5px; }
+        .input-group input { 
+            width: 100%; padding: 12px 15px; border-radius: 12px; border: 2px solid #f0f0f0; 
+            background: #f9f9f9; font-weight: 600; outline: none; transition: 0.3s;
+        }
+        .input-group input:focus { border-color: #ffcc00; background: white; }
+        
+        .gps-btn { position: absolute; right: 10px; bottom: 8px; background: none; border: none; color: #ffcc00; cursor: pointer; font-size: 20px; }
+        
+        .info-box { 
+            background: #f0fff4; border: 2px solid #c6f6d5; padding: 15px; border-radius: 15px; 
+            display: flex; justify-content: space-between; align-items: center; margin-top: 15px; display: none;
+        }
+        .price { font-size: 32px; font-weight: 900; margin: 0; color: #1a202c; }
+        .dist { font-size: 14px; font-weight: bold; color: #718096; margin: 0; }
+        
+        .btn-order { 
+            width: 100%; background: #000; color: white; padding: 18px; border-radius: 15px; 
+            border: none; font-weight: 900; font-size: 18px; margin-top: 15px; cursor: pointer;
+            text-transform: uppercase; display: none;
+        }
+        
+        #btnInstalar { background: black; color: white; border: none; padding: 6px 12px; border-radius: 20px; font-size: 10px; font-weight: bold; display: none; }
+    </style>
+
+    <!-- Recursos externos -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <!-- Iconos Lucide -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    
-    <style>
-        /* Estilos de emergencia por si el CDN falla */
-        body { font-family: sans-serif; margin: 0; background-color: #f3f4f6; }
-        #map { height: 100%; width: 100%; min-height: 300px; }
-        .maxim-yellow { background-color: #ffcc00 !important; }
-        .panel-flotante { 
-            position: absolute; bottom: 0; left: 0; right: 0; 
-            background: white; padding: 20px; z-index: 1000;
-            border-radius: 25px 25px 0 0; box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
-        }
-        @media (min-width: 768px) {
-            .panel-flotante { position: relative; border-radius: 20px; margin: 20px; width: 380px; }
-        }
-    </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body>
 
-    <!-- Encabezado Fijo -->
-    <header class="maxim-yellow p-4 flex items-center justify-between shadow-lg sticky top-0 z-[2000]">
-        <div class="flex items-center gap-2">
-            <i data-lucide="bike" class="w-6 h-6"></i>
-            <span class="font-bold text-lg tracking-tighter">MOTOTAXIS MONTERÍA</span>
+    <div class="header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span>🏍️</span>
+            <h1>MOTOTAXIS MONTERÍA</h1>
         </div>
-        <!-- Botón de Instalación visible -->
-        <button id="btnInstalar" class="hidden bg-black text-white text-[10px] px-4 py-2 rounded-full font-bold uppercase">
-            Instalar App
-        </button>
-    </header>
+        <button id="btnInstalar">INSTALAR APP</button>
+    </div>
 
-    <main class="flex-1 flex flex-col md:flex-row relative overflow-hidden">
-        <!-- Mapa ocupa todo el fondo -->
-        <div class="flex-1 w-full h-[60vh] md:h-auto relative z-0">
-            <div id="map"></div>
+    <div id="map"></div>
+
+    <div class="panel">
+        <div style="width: 40px; height: 4px; background: #eee; border-radius: 10px; margin: 0 auto 15px;"></div>
+        <h2 style="margin: 0 0 15px 0; font-style: italic; text-transform: uppercase; font-size: 20px;">¿A dónde vas?</h2>
+        
+        <div class="input-group">
+            <label>Origen</label>
+            <input type="text" id="origin" placeholder="Mi ubicación">
+            <button class="gps-btn" onclick="handleGPS()">🎯</button>
         </div>
 
-        <!-- Panel de control -->
-        <div class="panel-flotante">
-            <div class="w-12 h-1 bg-gray-200 rounded-full mx-auto mb-4 md:hidden"></div>
-            <h2 class="text-xl font-bold mb-4 uppercase italic">¿A dónde vas?</h2>
-            
-            <div class="space-y-4">
-                <div class="relative">
-                    <input type="text" id="origin" placeholder="Cargando ubicación..." class="w-full pl-4 pr-10 py-3 bg-gray-100 border-0 rounded-xl text-sm font-bold focus:ring-2 focus:ring-yellow-400">
-                    <button onclick="handleOriginGPS()" class="absolute right-3 top-3 text-yellow-600"><i data-lucide="locate" class="w-5 h-5"></i></button>
-                </div>
+        <div class="input-group">
+            <label>Destino Final</label>
+            <input type="text" id="destination" onkeydown="if(event.key==='Enter') calcular()" placeholder="¿A qué barrio vas?">
+        </div>
 
-                <div class="relative">
-                    <input type="text" id="destination" onkeydown="if(event.key === 'Enter') autoCalculate()" placeholder="Destino (Ej: Unisinú)" class="w-full px-4 py-3 bg-gray-100 border-0 rounded-xl text-sm font-bold focus:ring-2 focus:ring-yellow-400">
-                </div>
+        <div id="trip-info" class="info-box">
+            <div>
+                <span style="font-size: 10px; font-weight: bold; color: #2f855a; text-transform: uppercase;">Tarifa Estimada</span>
+                <p id="total-price" class="price">$ 0</p>
             </div>
-
-            <div id="trip-info" class="hidden mt-4 animate-pulse">
-                <div class="bg-yellow-50 p-4 rounded-xl border border-yellow-200 flex justify-between items-center mb-4">
-                    <div>
-                        <p class="text-[10px] font-bold text-yellow-800 uppercase">Tarifa</p>
-                        <p id="total-price" class="text-3xl font-black">$ 3.600</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-[10px] font-bold text-gray-400 uppercase font-bold">Distancia</p>
-                        <p id="distance-text" class="text-sm font-bold">0.0 km</p>
-                    </div>
-                </div>
-                <button onclick="enviarWhatsApp()" class="w-full bg-black text-white py-4 rounded-xl font-bold text-lg shadow-xl flex items-center justify-center gap-2">
-                    PEDIR MOTO AHORA <i data-lucide="chevron-right" class="w-5 h-5"></i>
-                </button>
+            <div style="text-align: right;">
+                <span style="font-size: 10px; font-weight: bold; color: #a0aec0; text-transform: uppercase;">Distancia</span>
+                <p id="distance-text" class="dist">0.0 km</p>
             </div>
         </div>
-    </main>
+
+        <button id="btn-pedir" onclick="enviarWA()" class="btn-order">PEDIR MOTO AHORA</button>
+    </div>
 
     <script>
-        // Inicializar iconos
-        lucide.createIcons();
-        
         let map, routeLayer;
-        const BASE_FARE = 1800; 
-        const KM_PRICE = 820; 
-        const MIN_FARE = 2500;
+        // Ajuste para que 2.2km dé $3.600
+        const BASE = 1800; 
+        const KM = 820; 
 
-        // Iniciar mapa
-        function initMap() {
+        function init() {
             map = L.map('map', { zoomControl: false }).setView([8.751, -75.881], 14);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-            handleOriginGPS(); // Cargar GPS al iniciar
         }
 
-        async function handleOriginGPS() {
+        async function handleGPS() {
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition((pos) => {
-                    const coords = `${pos.coords.longitude},${pos.coords.latitude}`;
-                    document.getElementById('origin').value = "📍 Mi Ubicación";
-                    document.getElementById('origin').dataset.coords = coords;
-                    if(document.getElementById('destination').value) autoCalculate();
-                }, () => {
-                    document.getElementById('origin').value = "Montería, Córdoba";
+                navigator.geolocation.getCurrentPosition(p => {
+                    document.getElementById('origin').value = "📍 Mi Ubicación Actual";
+                    document.getElementById('origin').dataset.coords = `${p.coords.longitude},${p.coords.latitude}`;
                 });
             }
         }
 
-        async function autoCalculate() {
-            const originVal = document.getElementById('origin').value;
-            const destVal = document.getElementById('destination').value;
-            if (!originVal || !destVal) return;
+        async function calcular() {
+            const o = document.getElementById('origin').value;
+            const d = document.getElementById('destination').value;
+            if(!o || !d) return;
 
             try {
-                const p1 = await geocode(originVal);
-                const p2 = await geocode(destVal);
-                if (!p1 || !p2) return;
-
+                const p1 = await geocode(o);
+                const p2 = await geocode(d);
+                
                 const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${p1.lon},${p1.lat};${p2.lon},${p2.lat}?overview=full&geometries=geojson`);
                 const data = await res.json();
-                const dist = (data.routes[0].distance / 1000).toFixed(2);
+                const distKm = (data.routes[0].distance / 1000).toFixed(2);
 
                 if (routeLayer) map.removeLayer(routeLayer);
-                routeLayer = L.geoJSON(data.routes[0].geometry, { style: { color: '#000', weight: 6 } }).addTo(map);
-                map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
+                routeLayer = L.geoJSON(data.routes[0].geometry, { style: { color: '#000', weight: 5 } }).addTo(map);
+                map.fitBounds(routeLayer.getBounds(), { padding: [30, 30] });
 
-                let price = Math.round((BASE_FARE + (parseFloat(dist) * KM_PRICE)) / 100) * 100;
-                if (price < MIN_FARE) price = MIN_FARE;
+                let price = Math.round((BASE + (parseFloat(distKm) * KM)) / 100) * 100;
+                if(price < 2500) price = 2500;
 
                 document.getElementById('total-price').innerText = `$ ${price.toLocaleString('es-CO')}`;
-                document.getElementById('distance-text').innerText = dist + " km";
-                document.getElementById('trip-info').classList.remove('hidden');
-                document.getElementById('trip-info').classList.remove('animate-pulse');
-            } catch (e) { console.log(e); }
+                document.getElementById('distance-text').innerText = distKm + " km";
+                document.getElementById('trip-info').style.display = 'flex';
+                document.getElementById('btn-pedir').style.display = 'block';
+            } catch (e) { alert("No se encontró la dirección"); }
         }
 
-        async function geocode(text) {
-            if (text.includes("📍")) {
+        async function geocode(q) {
+            if (q.includes("📍")) {
                 const c = document.getElementById('origin').dataset.coords.split(',');
                 return { lon: c[0], lat: c[1] };
             }
-            const r = await fetch(`https://nominatim.openstreetmap.org/search?q=${text}, Monteria&format=json&limit=1`);
-            const d = await r.json();
-            return d[0] ? { lon: d[0].lon, lat: d[0].lat } : null;
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}, Monteria&format=json&limit=1`);
+            const data = await res.json();
+            return { lon: data[0].lon, lat: data[0].lat };
         }
 
-        function enviarWhatsApp() {
-            const d = document.getElementById('destination').value;
-            const p = document.getElementById('total-price').innerText;
-            window.open(`https://wa.me/573000000000?text=Pedido de Moto:%0A📍 Origen: Mi Ubicación%0A🏁 Destino: ${d}%0A💰 Tarifa: ${p}`);
+        function enviarWA() {
+            const dest = document.getElementById('destination').value;
+            const price = document.getElementById('total-price').innerText;
+            window.open(`https://wa.me/573000000000?text=Pedido Moto:%0A📍 Origen: Mi Ubicación%0A🏁 Destino: ${dest}%0A💰 Tarifa: ${price}`);
         }
 
-        // --- LÓGICA DE INSTALACIÓN ---
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
+        // Instalación
+        let prompt;
+        window.addEventListener('beforeinstallprompt', e => {
             e.preventDefault();
-            deferredPrompt = e;
-            document.getElementById('btnInstalar').classList.remove('hidden');
+            prompt = e;
+            document.getElementById('btnInstalar').style.display = 'block';
         });
 
-        document.getElementById('btnInstalar').addEventListener('click', async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') document.getElementById('btnInstalar').classList.add('hidden');
-                deferredPrompt = null;
-            }
-        });
+        document.getElementById('btnInstalar').onclick = () => {
+            if(prompt) prompt.prompt();
+        };
 
-        window.onload = initMap;
+        window.onload = init;
     </script>
 </body>
 </html>
